@@ -1,17 +1,15 @@
 program fortranLearning
-    use BaseFunction
+    use Array
 
     implicit none   ! 显示声明变量
+    type(DArray) :: d1
 
-    ! integer(4), external :: getMinFunc      ! 如果自定义函数在主函数后面定义，需要有声明
+    Call d1%create(5)
 
-    integer(4) :: a = 10, b = 20, c = 0
+    d1%data = 1.0d0
+    write(*, *) d1%data
 
-    Call getMinSub(a, b, c)                   ! 子程序在修改形参的时候方便一点
-    write(*, '(a, i4)') "最小值: ", c
-
-    c = getMinFunc(a, b)                      ! 自定义函数在返回值的时候方便一点          
-    write(*, '(a, i4)') "最小值: ", c
+    Call d1%destroy()
 
     STOP
 end program fortranLearning

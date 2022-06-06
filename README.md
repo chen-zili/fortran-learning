@@ -3,7 +3,9 @@ A simple Fortran learning path
 
 ### 基本约定
 
-文件名统一以 F90结尾，这样能够使用C中的宏
+文件名统一以 F90结尾，这样能够使用C中的预处理命令
+
+注意，预处理命令前面不能有缩进
 
 
 ## 基本语法
@@ -315,6 +317,79 @@ end module BaseFunction
 
 ## 面向对象
 
+一个可变长度的数组，使用宏定义确定浮点数的字节数
+
+main.F90
+```
+program fortranLearning
+    use Array
+
+    implicit none   ! 显示声明变量
+    type(DArray) :: d1
+
+    Call d1%create(5)
+
+    d1%data = 1.0d0
+    write(*, *) d1%data
+
+    Call d1%destroy()
+
+    STOP
+end program fortranLearning
+
+```
+
+array.F90
+```
+module Array
+    implicit none
+
+! 宏定义，浮点数的精度
+#ifndef REALN
+#define REALN 8
+#endif
+
+    Type, public :: DArray
+
+        real(REALN), public, allocatable :: data(:)
+        integer(4), public :: length = 0
+
+    contains
+
+        procedure, public :: create
+        procedure, public :: destroy
+
+    end Type DArray
+
+
+    contains
+
+        subroutine create(me, length)
+            class(DArray), intent(inout) :: me
+            integer(4),intent(in) :: length
+
+            if (length > 0) then
+                if (allocated(me%data)) deallocate(me%data)
+                
+                me%length = length
+                Allocate(me%data(me%length))
+            else
+                write(*, '(a)') "长度小于0!"
+            end if
+            
+        end subroutine create
+
+
+        subroutine destroy(me)
+            class(DArray), intent(inout) :: me
+
+            if (allocated(me%data)) deallocate(me%data)
+            me%length = 0
+            
+        end subroutine destroy
+
+end module Array
+```
 
 
 ## 并行计算
@@ -328,14 +403,19 @@ end module BaseFunction
 
 ## 参考
 
-教程
+较为完整的教程（面向过程）：
 https://www.yiibai.com/fortran/
+
+面向过程：
 https://zhuanlan.zhihu.com/p/367443139
 
 
-浮点数问题
+浮点数问题：
 https://blog.csdn.net/weixin_43940314/article/details/105679440
 
-IO格式
+IO格式：
 http://sunmengyao0712.lofter.com/post/1d197b79_64207c0
 
+
+面向对象的基本结构可以参考：
+https://github.com/jacobwilliams/pyplot-fortran/blob/master/src/pyplot_module.F90

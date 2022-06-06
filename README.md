@@ -394,12 +394,42 @@ end module Array
 
 ## 并行计算
 
+见 other
 
 
 ## 其它
 
 ### 与C的接口
 
+具体参考 QN2DZR、CCPMatchingAdjust两个项目
+
+1. add *.c file in CMakeLists.txt
+
+    ```
+    file(GLOB_RECURSE SRCS ${CMAKE_CURRENT_LIST_DIR}/fcode/*.F90 interface.c)
+    ```
+
+2. define function in *.c file
+
+    The function name in *.c can only be **lowercase** and ends with **_**. All variables are passed through the **pointer**
+
+
+    ```
+    void funtion_to_fortran_(int * n, double *array)
+    {
+        // your code
+    }
+
+    ```
+
+3. call in Fortran
+
+    ```
+    Integer(4) :: N, array(100)
+
+    Call funtion_to_fortran(N, array)
+
+    ```
 
 ## 参考
 

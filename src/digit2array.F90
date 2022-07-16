@@ -27,8 +27,8 @@ module BaseFunction
 
         subroutine addOne(caseIndex, width, number)
             implicit none
-            integer(4), intent(inout) :: caseIndex(width)
             integer(4), intent(in) :: width
+            integer(4), intent(inout) :: caseIndex(width)
             integer(4), intent(in) :: number
             integer(4) :: i
 
@@ -46,23 +46,27 @@ module BaseFunction
 
         subroutine real2Array(caseIndex, width, number, value)
             implicit none
-            integer(4), intent(inout) :: caseIndex(width)
             integer(4), intent(in) :: width
+            integer(4), intent(inout) :: caseIndex(width)
             integer(4), intent(in) :: number
             real(8), intent(in) :: value
-            real(8) :: tmpMax
+            real(8) :: tmpMax, temValue
             integer(4) :: i
             
             if (value < (dble(number) ** dble(width)) .and. value >= 0) then
                 caseIndex = 0
+                temValue = value
 
                 do i = 1, width
                     tmpMax = dble(number) ** dble(width-i)
-                    if (value >= tmpMax) then
-                        caseIndex(i) = int(value / tmpMax)
-                        value = value - dble(caseIndex(i)) * tmpMax
-                    else if (dabs(value) <= 0.5d0) then
+
+                    if (temValue <= 0.5d0) then
                         exit
+                    
+                    else if (temValue >= tmpMax) then
+                        caseIndex(i) = int(temValue / tmpMax)
+                        temValue = temValue - dble(caseIndex(i)) * tmpMax
+
                     end if
                 end do
             end if

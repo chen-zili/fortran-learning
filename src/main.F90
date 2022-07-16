@@ -7,109 +7,126 @@ program main
     ! Coarray
 
     ! 变量定义
-    integer(4) :: caseJudgeIndex(judgeNumber) = 0       ! oneCaseNumber  ** judgeNumber
-    integer(4) :: caseJudgeStopIndex(judgeNumber) = 0
-    integer(4) :: caseItemIndex(itemNumber) = 0         ! judgeOneNumber ** itemNumber
-    integer(4) :: scoreTabOne(judgeNumber, itemNumber, companyNumber) = 0
-    real(8) :: socreOne(companyNumber) = 0
-    real(8) :: socreOneTmp(judgeNumber) = 0
+    integer(4) :: caseItemIndex(itemNumber) = 0
+    integer(4) :: caseItemStopIndex(itemNumber) = 0
+    integer(4) :: scoreTab(oneCaseNumber, judgeNumber, companyNumber) = 0
+    integer(4) :: socreOne(companyNumber) = 0
 
-	integer(8) :: time_start, time_end
+	integer(4) :: time_start, time_end
 	integer(4) :: rank = 0, size = 0, i, j, k, m, n
 
     integer(4) :: counts[*] = 0
     real(8) :: allcount = 0.d0
-    Character(len=99) :: fileName
 
     ! image info
     rank = this_image()
     size = num_images()
-
-    write(fileName, *) "index ", rank, ".dat"
 
     ! 计时开始
 	if (rank == 1) then
 		call system_clock(time_start)
 	end if
 
-    ! 确定image范围
-    if (1 == rank) then
-        caseJudgeIndex = 0
-        call real2Array(caseJudgeStopIndex, judgeNumber, oneCaseNumber, &
-                        allCaseNumber / dble(size) * dble(rank))
-        
-    else if (size == rank) then
-        call real2Array(caseJudgeIndex, judgeNumber, oneCaseNumber, &
-                        allCaseNumber / dble(size) * dble(rank-1))
-        call addOne(caseJudgeIndex, judgeNumber, oneCaseNumber)
-
-        caseJudgeStopIndex = oneCaseNumber - 1
-
-    else
-        call real2Array(caseJudgeIndex, judgeNumber, oneCaseNumber, &
-                        allCaseNumber / dble(size) * dble(rank-1))
-        call addOne(caseJudgeIndex, judgeNumber, oneCaseNumber)
-
-        call real2Array(caseJudgeStopIndex, judgeNumber, oneCaseNumber, &
-                        allCaseNumber / dble(size) * dble(rank))
-    end if
-
-    ! write(*, '(a, i, *(i))') 'Start', rank, caseJudgeIndex
-    ! write(*, '(a, i, *(i))') 'Stop ', rank, caseJudgeStopIndex
-
-    ! sum(caseJudgeStopIndex - caseJudgeIndex) >= 0
-    n = 0
-    do while (n < 10000000)
-        ! 得分情况
-        do i = 1, judgeNumber
-            call int2Array(caseItemIndex, itemNumber, judgeOneNumber, caseJudgeIndex(i))
-            ! caseItemIndex = 0
-            caseItemIndex = caseItemIndex + 1   ! 评分表是从1开始，计数器是从0开始
-
-            ! if (rank == 1) then
-            !     write(*, *) ""
-            !     write(*, *) i
-            ! end if
-
-            do j = 1, itemNumber
-                do k = 1, companyNumber
-                    scoreTabOne(i, j, k) = itemScores(j, judgeOne(caseItemIndex(j), k))
+    ! 初始化Tab
+    n = 1
+    do i = 1, judgeNumber+1
+        do j = 1, i
+            m = 0
+            if (judgeNumber+1-i > 0) then
+                do k = 1, judgeNumber+1-i
+                    scoreTab(2*n-1, k, :) = judgeOne(1, 1, :)
+                    scoreTab(2*n, k, :) = judgeOne(1, 2, :)
                 end do
+                m = judgeNumber+1-i
+            end if
 
-                ! if (rank == 1) then
-                !     write(*, *) scoreTabOne(i, j, 1:companyNumber)
-                ! end if
+            if ((i-1) > 0) then
+                if (j == i) then
+                    do k = 1, i-1
+                        scoreTab(2*n-1, k+m, :) = judgeOne(3, 1, :)
+                        scoreTab(2*n, k+m, :) = judgeOne(3, 2, :)
+                    end do
+                
+                else
+                    do k = 1, i-j
+                        scoreTab(2*n-1, k+m, :) = judgeOne(2, 1, :)
+                        scoreTab(2*n, k+m, :) = judgeOne(2, 2, :)
+                    end do
+                    m = m + i-j
 
-            end do
+                    if (j > 1) then
+                        do k = 1, j-1
+                            scoreTab(2*n-1, k+m, :) = judgeOne(3, 1, :)
+                            scoreTab(2*n, k+m, :) = judgeOne(3, 2, :)
+                        end do
+                    end if
+                end if
+            end if
+
+            n = n + 1
         end do
-
-        ! 得分计算
-        socreOne = 0
-        do k = 1, companyNumber
-            do j = 1, itemNumber
-                socreOneTmp = dble(scoreTabOne(1:judgeNumber, j, k))
-                socreOne(k) = socreOne(k) + (sum(socreOneTmp) - maxval(socreOneTmp) - minval(socreOneTmp))
-            end do
-        end do
-
-        ! if (rank == 1) then
-        !     write(*, *) ""
-        !     write(*, *) socreOne
-        ! end if
-
-        ! 是否符合条件
-        if (socreOne(1) == socreOne(2) .and. socreOne(2) == socreOne(3)) then
-            counts = counts + 1
-            write(*, '(*(i))') caseJudgeIndex
-
-            ! open(20, file=fileName, position='APPEND')
-            !     write(20, '(*(i))') caseJudgeIndex
-            ! close(20)
-        end if
-        
-        call addOne(caseJudgeIndex, judgeNumber, oneCaseNumber)
-        n = n + 1
     end do
+
+
+    ! ! 确定image范围
+    ! if (1 == rank) then
+    !     caseItemIndex = 0
+    !     call real2Array(caseItemStopIndex, itemNumber, oneCaseNumber, &
+    !                     dble(allCaseNumber) / dble(size) * dble(rank))
+        
+    ! else if (size == rank) then
+    !     call real2Array(caseItemIndex, itemNumber, oneCaseNumber, &
+    !                     dble(allCaseNumber) / dble(size) * dble(rank-1))
+    !     call addOne(caseItemIndex, itemNumber, oneCaseNumber)
+
+    !     caseItemStopIndex = oneCaseNumber - 1
+
+    ! else
+    !     call real2Array(caseItemIndex, itemNumber, oneCaseNumber, &
+    !                     dble(allCaseNumber) / dble(size) * dble(rank-1))
+    !     call addOne(caseItemIndex, itemNumber, oneCaseNumber)
+
+    !     call real2Array(caseItemStopIndex, itemNumber, oneCaseNumber, &
+    !                     dble(allCaseNumber) / dble(size) * dble(rank))
+    ! end if
+
+    ! ! write(*, '(a, i, *(i))') 'Start', rank, caseItemIndex
+    ! ! write(*, '(a, i, *(i))') 'Stop ', rank, caseItemStopIndex
+
+    ! do while (sum(caseItemStopIndex - caseItemIndex) >= 0)
+    !     ! 得分情况
+    !     do i = 1, judgeNumber
+    !         call int2Array(caseItemIndex, itemNumber, judgeOneNumber, caseItemIndex(i))
+    !         caseItemIndex = caseItemIndex + 1   ! 评分表是从1开始，计数器是从0开始
+
+    !         do j = 1, itemNumber
+    !             do k = 1, companyNumber
+    !                 scoreTabOne(i, j, k) = itemScores(j, judgeOne(caseItemIndex(j), k))
+    !             end do
+    !         end do
+    !     end do
+
+    !     ! 得分计算
+    !     socreOne = 0
+    !     do k = 1, companyNumber
+    !         do j = 1, itemNumber
+    !             socreOneTmp = scoreTabOne(1:judgeNumber, j, k)
+    !             socreOne(k) = socreOne(k) + sum(socreOneTmp) - max(socreOneTmp) - min(socreOneTmp)
+    !         end do
+    !     end do
+
+    !     ! 是否符合条件
+    !     if (socreOne(1) == socreOne(2) .and. socreOne(2) == socreOne(3)) then
+    !         counts = counts + 1
+    !         write(*, '(*(i))') caseItemIndex
+
+    !         open(20, file='./index.dat', position='APPEND')
+    !             read(20, '(*(i))') caseItemIndex
+    !         close(20)
+    !     end if
+        
+    !     call addOne(caseItemIndex, judgeNumber, oneCaseNumber)
+    ! end do
 
 	sync all											! 等待所有image运行完
 
@@ -124,7 +141,7 @@ program main
 
         ! 计时结束
 		call system_clock(time_end)
-		write(*, '(a, f10.4)') "Time (s): ", dble(time_end-time_start) / 1000000.d0
+		write(*, '(a, f10.4)') "Time (s): ", dble(time_end-time_start) / 1000.d0
 
 	end if
 

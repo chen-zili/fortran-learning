@@ -4,7 +4,7 @@ project(fortran-learning)
 
 enable_language(Fortran C)
 
-set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -coarray=shared -coarray-num-images=2")
+set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -coarray=shared -coarray-num-images=8")
 add_compile_options(-heap-arrays -logo)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,stack-size=1000000")
 

@@ -6,17 +6,21 @@ module BaseFunction
     integer(4), parameter :: itemNumber = 5
     integer(4), parameter :: judgeNumber = 7
     integer(4), parameter :: judgeOneNumber = 6
-    integer(4), parameter :: oneCaseNumber = judgeOneNumber ** itemNumber
-    real(8)   , parameter :: allCaseNumber = dble(oneCaseNumber) ** dble(judgeNumber)
-    integer(4), parameter :: judgeOne(judgeOneNumber, companyNumber) = &
-                            (/1, 1, 2, 2, 3, 3, &
-                              2, 3, 1, 3, 1, 2, &
-                              3, 2, 3, 1, 2, 1/)
-
+    integer(4), parameter :: oneCaseNumber = 72
+    integer(4), parameter :: allCaseNumber = oneCaseNumber ** itemNumber
     integer(4), parameter :: itemScores(itemNumber, companyNumber) = &
-                            (/25, 25, 10, 10, 30, &
-                              20, 20, 8, 8, 25, &
-                              15, 15, 6, 6, 20/)
+                            (/25, 20, 15, &
+                            25, 20, 15, &
+                            10, 8, 6, &
+                            10, 8, 6, &
+                            30, 25, 20/)
+    integer(4), parameter :: judgeOne(companyNumber, 2, companyNumber) = &
+                            (/1, 2, 3, &
+                              1, 2, 3, &
+                              2, 1, 1, &
+                              3, 3, 2, &
+                              3, 3, 2, &
+                              2, 1, 1/)
 
     contains
 
@@ -74,8 +78,8 @@ module BaseFunction
             integer(4), intent(in) :: width
             integer(4), intent(inout) :: caseIndex(width)
             integer(4), intent(in) :: number
-            integer(4), intent(in) :: value
-            integer(4) :: tmpMax, temValue
+            integer(8), intent(in) :: value
+            integer(8) :: tmpMax, temValue
             integer(4) :: i
             
             if (value < (number ** width) .and. value >= 0) then
@@ -89,7 +93,7 @@ module BaseFunction
                         exit
                     
                     else if (temValue >= tmpMax) then
-                        caseIndex(i) = temValue / tmpMax
+                        caseIndex(i) = temValue) / tmpMax
                         temValue = mod(temValue, tmpMax)
 
                     end if
